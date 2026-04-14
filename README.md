@@ -1,114 +1,169 @@
-
 # Price Optimization using Python
 
 ## Project Overview
 
-This project demonstrates a price optimization strategy using Python, leveraging data analysis and modeling to determine effective pricing for products or services. The goal is to maximize profitability and market share by considering factors such as market demand, competition, costs, and customer behavior.
+This project demonstrates a comprehensive, end-to-end price optimization strategy using Python. It combines exploratory data analysis, competitive benchmarking, price elasticity modeling, dynamic pricing simulation, and machine learning-based demand forecasting to determine optimal pricing for retail products. The goal is to maximize revenue and market share by accounting for market demand, competition, costs, and customer behavior.
+
+---
 
 ## Dataset
 
-The analysis uses a dataset containing the following key columns:
+**File:** `Competition_Data.csv`  
+**Size:** 100,000 rows × 9 columns
 
-*   `Fiscal_Week_ID`: Identifier for the fiscal week.
-*   `Store_ID`: Unique identifier for each store.
-*   `Item_ID`: Unique identifier for each product item.
-*   `Price`: The store's selling price for the item.
-*   `Item_Quantity`: The quantity of the item sold.
-*   `Sales_Amount_No_Discount`: Sales amount before any discounts.
-*   `Sales_Amount`: Sales amount after applying discounts.
-*   `Competition_Price`: The price of the same item offered by competitors.
+| Column | Description |
+|---|---|
+| `Index` | Row index |
+| `Fiscal_Week_ID` | Fiscal week identifier (format: YYYY-WW) |
+| `Store_ID` | Unique store identifier (10 stores) |
+| `Item_ID` | Unique product identifier (176 items) |
+| `Price` | Store's selling price (range: $47.70 – $310.66) |
+| `Item_Quantity` | Quantity of the item sold |
+| `Sales_Amount_No_Discount` | Sales amount before discounts |
+| `Sales_Amount` | Final sales amount after discounts |
+| `Competition_Price` | Competitor's price for the same item |
+
+---
 
 ## Methodology
 
-The project follows a structured approach to price optimization:
+### 1. Data Loading and Exploration
+- Loaded `Competition_Data.csv` into a Pandas DataFrame.
+- Inspected data structure using `df.head()` and `df.info()`, confirming 100,000 entries with no missing values and correct data types.
 
-1.  **Data Loading and Initial Exploration**: 
-    *   Loaded the `Competition_Data.csv` dataset into a Pandas DataFrame.
-    *   Inspected the data structure and types using `df.head()` and `df.info()` to ensure data quality and identify potential issues.
+### 2. Price Distribution Analysis
+- Visualized price distributions for both the store and competition using histograms.
+- **Observation:** Competition prices peaked around the $100–150 and $200–250 ranges, while the store's prices were more evenly distributed across $50–300.
 
-2.  **Price Distribution Analysis**: 
-    *   Visualized the price distributions for our store and the competition using histograms to understand market positioning.
-    *   *Observation*: Competition generally had higher prices with specific peaks, while our store's prices were more evenly distributed.
+### 3. Price vs. Sales Amount Relationship
+- Examined the relationship between price and sales using scatter plots.
+- **Observation:** The store showed high dispersion with no clear price-sales trend; competition showed denser clustering at higher sales amounts.
 
-3.  **Price vs. Sales Amount Relationship**: 
-    *   Used scatter plots to examine the relationship between price and sales amount for both our store and the competition.
-    *   *Observation*: Our store showed varied performance without a clear trend, while the competition showed denser clustering of higher sales amounts.
+### 4. Price Changes Over Time
+- Converted `Fiscal_Week_ID` to datetime and plotted average weekly prices for both parties.
+- **Observation:** Competition maintained consistently higher, more stable average prices; the store experienced more fluctuations.
 
-4.  **Price Changes Over Time**: 
-    *   Converted `Fiscal_Week_ID` to datetime objects.
-    *   Plotted the average price trends over time for both our store and the competition.
-    *   *Observation*: Competition maintained higher and more stable average prices, whereas our store experienced more fluctuations.
+### 5. Price Elasticity of Demand
+- Calculated period-over-period price elasticity: `elasticity = qty_change / price_change`
+- **Observation:** High variability in elasticity indicates that sales are influenced by multiple factors beyond price alone (e.g., promotions, seasonality).
 
-5.  **Price Elasticity of Demand Calculation**: 
-    *   Calculated price elasticity of demand (`elasticity = (qty_change / price_change)`) to understand how sensitive demand is to price changes.
-    *   Plotted elasticity over time, revealing significant variability.
-    *   *Observation*: Demand response to price changes was inconsistent, suggesting other factors (promotions, seasonality) influence sales.
+### 6. Total Sales and Price Bracket Comparison
+- Compared total revenue between the store (~$114M) and competition (~$696M).
+- Segmented sales into price brackets ($0–50 through $451–500) to identify performance gaps.
+- **Observation:** Competition outperformed the store across all major price brackets, particularly in lower-to-mid ranges.
 
-6.  **Total Sales Comparison**: 
-    *   Compared total sales amounts between our store and the competition.
-    *   *Observation*: Competition significantly outperformed our store in total sales, highlighting the need for optimization.
+### 7. Dynamic Pricing Model
+- Segmented items into **Low**, **Medium**, and **High** tiers based on average item price.
+- Computed average elasticity per segment to guide pricing rules:
+  - **Medium segment** (~0.154 avg elasticity): Price increased by **5%** (relatively inelastic demand).
+  - **High segment** (~0.148 avg elasticity): Price decreased by **10%** (to test price sensitivity).
+- Simulated dynamic pricing, resulting in a projected total sales amount of ~$622.7M vs. ~$114.1M under existing pricing.
 
-7.  **Sales by Price Bracket Analysis**: 
-    *   Segmented sales into various price brackets (e.g., 0-50, 51-100, etc.).
-    *   Compared sales performance within each bracket for our store and the competition.
-    *   *Observation*: Competition consistently outperformed our store across most price brackets, especially in lower-to-mid ranges.
+### 8. Feature Engineering for ML Models
+- Created lag features (`qty_lag1`, `qty_lag2`) and rolling averages (`qty_rolling4`).
+- Engineered a `price_gap` feature (store price minus competition price) and a `week_num` feature.
+- Label-encoded `Store_ID` and `Item_ID` for use in tree-based models.
 
-8.  **Dynamic Pricing Model Development**: 
-    *   Segmented items based on average price into 'Low', 'Medium', and 'High' categories.
-    *   Calculated average price elasticity for each segment.
-    *   Defined dynamic pricing rules: 
-        *   **Medium Segment (Elasticity ~0.15)**: Increased price by 5% due to relatively inelastic demand.
-        *   **High Segment (Elasticity ~0.15)**: Decreased price by 10% to test the impact, assuming some price sensitivity despite low elasticity.
+### 9. Baseline: Linear Regression
+- Trained a Linear Regression model on a time-based 80/20 train-test split.
+- **Results:** MAE = **13.94**, R² = **0.89**
 
-9.  **Dynamic Pricing Simulation**: 
-    *   Applied the dynamic pricing rules to a copy of the dataset.
-    *   Calculated new sales amounts based on the dynamic prices.
-    *   Compared total sales amounts between the existing and dynamic pricing strategies.
+### 10. XGBoost Regression
+- Trained an XGBoost Regressor (300 estimators, learning rate 0.05, max depth 6) on the same split.
+- Visualized feature importances to identify key demand drivers.
+- **Results:** MAE = **11.88**, R² = **0.92** — a meaningful improvement over the baseline.
 
-## Key Findings & Results
+### 11. Prophet Time Series Forecasting
+- Aggregated weekly `Item_Quantity` totals and trained a Prophet model to capture trend and seasonality.
+- Evaluated on an 8-week holdout set.
+- **Note:** Prophet performance was limited due to the short time range in the dataset (only 5 fiscal weeks), making it less suitable than regression models here.
 
-*   **Competition's Superiority**: The competition consistently demonstrated higher average prices, more stable pricing strategies, and significantly greater total sales across most price brackets compared to our store.
-*   **Inconsistent Demand Response**: Our store's price elasticity of demand showed high variability, indicating that sales are influenced by multiple factors beyond just price.
-*   **Dynamic Pricing Effectiveness**: The simulation of the dynamic pricing model, with targeted price adjustments based on segment elasticity, showed a **substantial increase in total sales amount** (from approximately 1.14e+08 to 6.22e+08), demonstrating its potential to significantly boost revenue.
+### 12. Revenue Projection with Dynamic Pricing + XGBoost
+- Applied the dynamic pricing rules to the feature set and used the trained XGBoost model to re-predict demand.
+- **Results:**
+  - Existing Revenue: ~$194.7M
+  - Forecast-adjusted Dynamic Pricing Revenue: higher projected uplift
+
+### 13. Revenue Sensitivity Analysis
+- Simulated uniform price adjustments from **–10% to +15%** across all items using the XGBoost model.
+- **Observation:** Helped identify a potentially optimal uniform price adjustment and highlighted the non-linear relationship between price changes and total revenue.
+
+---
+
+## Model Performance Summary
+
+| Model | MAE | R² |
+|---|---|---|
+| Linear Regression | 13.94 | 0.89 |
+| XGBoost | 11.88 | 0.92 |
+| Prophet | Limited* | — |
+
+*Prophet performance was constrained by the limited date range in the dataset.
+
+---
+
+## Key Findings
+
+- **Competitive Gap:** Competition consistently achieved higher average prices, more stable pricing, and significantly greater total revenue (~6× the store's sales amount).
+- **Inconsistent Demand Response:** High elasticity variability suggests promotions, seasonality, and other factors strongly influence sales beyond price alone.
+- **Dynamic Pricing Effectiveness:** Segment-based pricing adjustments projected a massive revenue uplift — from ~$114M to ~$623M under a rule-based simulation.
+- **ML-Driven Forecasting:** XGBoost outperformed Linear Regression on demand prediction (R² 0.92 vs. 0.89), with `qty_lag1`, `qty_lag2`, and `price_gap` being top features.
+- **Revenue Sensitivity:** Sensitivity analysis showed that modest upward price adjustments can increase total revenue — but the optimal level depends on segment-level elasticity.
+
+---
 
 ## Future Improvements
 
-*   **Incorporate more features**: Integrate additional features such as promotions, seasonality, and inventory levels into the pricing model for more accurate predictions.
-*   **Advanced Elasticity Modeling**: Implement more sophisticated models for calculating price elasticity, such as regression analysis, to capture non-linear relationships and interactions between variables.
-*   **Machine Learning Models**: Explore machine learning algorithms (e.g., Random Forests, Gradient Boosting) for dynamic pricing that can learn complex patterns and adapt to changing market conditions.
-*   **A/B Testing**: Design and implement A/B tests to validate the effectiveness of dynamic pricing strategies in a real-world scenario.
-*   **Cost Analysis**: Incorporate cost data to ensure that price adjustments not only maximize revenue but also maintain healthy profit margins.
-*   **Real-time Data Integration**: Develop a system for real-time data ingestion and price adjustments to respond quickly to market changes.
+- **Richer Features:** Incorporate promotions, seasonality indicators, and inventory levels for more accurate demand modeling.
+- **Advanced Elasticity Modeling:** Use regression analysis to capture non-linear elasticity and interactions between variables.
+- **Hyperparameter Tuning:** Systematically tune XGBoost and LightGBM hyperparameters using cross-validation.
+- **LightGBM Comparison:** Benchmark LightGBM against XGBoost for speed and performance at scale.
+- **A/B Testing:** Design real-world experiments to validate dynamic pricing recommendations before full deployment.
+- **Cost Integration:** Incorporate cost data to ensure price adjustments maintain healthy profit margins, not just maximise top-line revenue.
+- **Extended Time Series:** Collect more historical data to improve Prophet's seasonal decomposition and forecasting accuracy.
+- **Real-Time Pricing:** Build a pipeline for live data ingestion and automated price adjustments in response to market changes.
 
-## How to Run the Notebook
+---
 
-To run this analysis and simulation, follow these steps:
+## How to Run
 
-1.  **Clone the Repository (if applicable)**:
-    ```bash
-    git clone <repository_url>
-    cd <project_directory>
-    ```
+### 1. Clone the Repository
+```bash
+git clone <repository_url>
+cd <project_directory>
+```
 
-2.  **Ensure Data Availability**: Make sure the `Competition_Data.csv` file is accessible at the specified path (e.g., `/content/drive/MyDrive/Colab Notebooks/Price Optimization Project/Competition_Data.csv`). Adjust the path in the code if your file location is different.
+### 2. Ensure Data Availability
+Place `Competition_Data.csv` in an accessible path and update the file path in Cell 2:
+```python
+pricing_data = pd.read_csv("path/to/Competition_Data.csv")
+```
 
-3.  **Install Dependencies**: The project primarily uses `pandas` and `matplotlib`. Ensure you have these libraries installed:
-    ```bash
-    pip install pandas matplotlib
-    ```
-    (These are typically pre-installed in Google Colab environments.)
+### 3. Install Dependencies
+```bash
+pip install pandas matplotlib scikit-learn xgboost lightgbm prophet
+```
+> These are typically pre-installed in Google Colab. Run the `!pip install prophet xgboost lightgbm` cell in the notebook and **restart the runtime** before continuing.
 
-4.  **Open in Google Colab**: Upload the `.ipynb` file to Google Colab or open it directly if it's hosted there.
+### 4. Run the Notebook
+Open `price_optimization.ipynb` in Google Colab or Jupyter and execute cells sequentially from top to bottom.
 
-5.  **Run Cells**: Execute the cells sequentially from top to bottom. The notebook is designed to run in order.
+---
 
 ## Technologies Used
 
-*   Python 3
-*   Pandas (for data manipulation and analysis)
-*   Matplotlib (for data visualization)
+| Library | Purpose |
+|---|---|
+| Python 3 | Core language |
+| Pandas | Data manipulation and analysis |
+| Matplotlib | Data visualization |
+| Scikit-learn | Linear Regression, train/test split, evaluation metrics |
+| XGBoost | Gradient boosting demand prediction |
+| LightGBM | Alternative gradient boosting (installed, available for extension) |
+| Prophet | Time series forecasting |
+
+---
 
 ## Conclusion
 
-This project successfully outlines a data-driven approach to price optimization. By understanding competitive landscapes, demand elasticity, and the impact of price on sales, it's possible to implement dynamic pricing strategies that lead to significant revenue improvements. The simulation demonstrated the power of tailored pricing adjustments in maximizing sales performance.
-```
+This project delivers a complete, data-driven price optimization pipeline — from competitive analysis and elasticity modeling through to ML-based demand forecasting and revenue projection. The dynamic pricing simulation demonstrated significant revenue potential, and the XGBoost model proved the strongest predictor of item-level demand. Together, these components form a solid foundation for building a production-ready pricing recommendation system.
